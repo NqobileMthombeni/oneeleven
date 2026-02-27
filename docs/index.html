@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Sort — API Tester</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --black: #0f0f0f;
+        --white: #f5f4ef;
+        --accent: #e8ff47;
+        --muted: #6b6b6b;
+        --border: #2a2a2a;
+        --surface: #1a1a1a;
+        --error: #ff5f5f;
+        --success: #47ffa0;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: var(--black);
+        color: var(--white);
+        font-family: 'Syne', sans-serif;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        overflow-x: hidden;
+      }
+
+      /* background grain */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .card {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 480px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        padding: 40px;
+        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateY(24px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      .card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 36px;
+      }
+
+      .badge {
+        font-family: 'Space Mono', monospace;
+        font-size: 10px;
+        color: var(--black);
+        background: var(--accent);
+        padding: 4px 8px;
+        border-radius: 2px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-top: 4px;
+      }
+
+      h1 {
+        font-size: 26px;
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+      }
+
+      h1 span {
+        display: block;
+        color: var(--accent);
+      }
+
+      .divider {
+        height: 1px;
+        background: var(--border);
+        margin: 28px 0;
+      }
+
+      .field {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      input {
+        width: 100%;
+        background: var(--black);
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        color: var(--white);
+        font-family: 'Space Mono', monospace;
+        font-size: 13px;
+        padding: 12px 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        outline: none;
+      }
+
+      input::placeholder {
+        color: #3a3a3a;
+      }
+
+      input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(232, 255, 71, 0.08);
+      }
+
+      .btn {
+        width: 100%;
+        padding: 13px 20px;
+        border: none;
+        border-radius: 2px;
+        font-family: 'Syne', sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: transform 0.15s, opacity 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .btn:active { transform: scale(0.98); }
+      .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+      .btn-primary {
+        background: var(--accent);
+        color: var(--black);
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        opacity: 0.88;
+      }
+
+      .btn-secondary {
+        background: transparent;
+        color: var(--white);
+        border: 1px solid var(--border);
+        margin-top: 12px;
+      }
+
+      .btn-secondary:hover:not(:disabled) {
+        border-color: var(--white);
+      }
+
+      .result-box {
+        margin-top: 24px;
+        background: var(--black);
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        overflow: hidden;
+        display: none;
+        animation: fadeIn 0.3s ease both;
+      }
+
+      .result-box.show { display: block; }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      .result-label {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .result-label .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--success);
+        animation: pulse 1.5s ease infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+      }
+
+      .result-content {
+        font-family: 'Space Mono', monospace;
+        font-size: 12px;
+        color: var(--success);
+        padding: 14px;
+        white-space: pre-wrap;
+        word-break: break-all;
+        line-height: 1.7;
+      }
+
+      .toast {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 16px;
+        padding: 12px 14px;
+        border-radius: 2px;
+        font-size: 12px;
+        font-family: 'Space Mono', monospace;
+        display: none;
+        animation: fadeIn 0.25s ease both;
+      }
+
+      .toast.show { display: flex; }
+
+      .toast.error {
+        background: rgba(255, 95, 95, 0.1);
+        border: 1px solid rgba(255, 95, 95, 0.3);
+        color: var(--error);
+      }
+
+      .toast.success {
+        background: rgba(71, 255, 160, 0.08);
+        border: 1px solid rgba(71, 255, 160, 0.2);
+        color: var(--success);
+      }
+
+      .spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255,255,255,0.1);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        flex-shrink: 0;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      @media (max-width: 480px) {
+        .card { padding: 28px 20px; }
+        h1 { font-size: 22px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h1>Word<span>Sort.</span></h1>
+        </div>
+        <span class="badge">API Tester</span>
+      </div>
+
+      <div class="field">
+        <label>API Endpoint</label>
+        <input type="url" id="apiUrl" value="http://127.0.0.1:8000" placeholder="https://api.example.com" />
+      </div>
+
+      <div class="field">
+        <label>Word to Sort</label>
+        <input type="text" id="data" placeholder="e.g. hurricane" autocomplete="off" />
+      </div>
+
+      <button class="btn btn-primary" onclick="testSort()" id="sortBtn">
+        Run Sort
+      </button>
+
+      <div class="result-box" id="result">
+        <div class="result-label">
+          <span class="dot"></span>
+          Response
+        </div>
+        <div class="result-content" id="resultContent"></div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label>Email (optional)</label>
+        <input type="email" id="email" placeholder="you@example.com" />
+      </div>
+
+      <button class="btn btn-secondary" onclick="submitResults()" id="submitBtn">
+        Submit Results
+      </button>
+    </div>
+
+    <script>
+      let lastSortResult = null;
+
+      function showToast(msg, type = 'error') {
+        const t = document.getElementById('toast');
+        t.className = `toast show ${type}`;
+        t.innerHTML = type === 'error'
+          ? `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M7 4v3M7 9.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>${msg}`
+          : `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>${msg}`;
+      }
+
+      function hideToast() {
+        document.getElementById('toast').className = 'toast';
+      }
+
+      async function testSort() {
+        const apiUrl = document.getElementById('apiUrl').value.trim();
+        const data   = document.getElementById('data').value.trim();
+        const btn    = document.getElementById('sortBtn');
+
+        hideToast();
+
+        if (!apiUrl) return showToast('API URL is required.');
+        if (!data)   return showToast('Please enter a word to sort.');
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span>Sorting…`;
+
+        try {
+          const res = await fetch(`${apiUrl}/sort-word`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data }),
+          });
+
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || 'Request failed');
+
+          lastSortResult = result;
+          document.getElementById('resultContent').textContent = JSON.stringify(result, null, 2);
+          document.getElementById('result').classList.add('show');
+          showToast('Sort completed successfully.', 'success');
+        } catch (err) {
+          showToast(err.message || 'Could not connect to API.');
+          document.getElementById('result').classList.remove('show');
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = 'Run Sort';
+        }
+      }
+
+      function submitResults() {
+        const email = document.getElementById('email').value.trim();
+        hideToast();
+        if (!email)           return showToast('Please enter an email address.');
+        if (!lastSortResult)  return showToast('Run a sort first before submitting.');
+        showToast(`Submitted — ${email}`, 'success');
+        console.log('Sort result:', lastSortResult);
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && document.activeElement.id !== 'email') {
+          testSort();
+        }
+      });
+    </script>
+  </body>
+</html>
